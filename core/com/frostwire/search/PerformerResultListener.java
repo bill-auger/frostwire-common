@@ -38,6 +38,8 @@ public final class PerformerResultListener implements SearchListener {
     public void onResults(SearchPerformer performer, List<? extends SearchResult> results) {
         List<SearchResult> list = new LinkedList<SearchResult>();
 
+System.out.println("PerformerResultListener::onResults() nResults" + results.size());
+
         for (SearchResult sr : results) {
             if (sr instanceof CrawlableSearchResult) {
                 CrawlableSearchResult csr = (CrawlableSearchResult) sr;

@@ -1,7 +1,7 @@
 /*
  * Created by Angel Leon (@gubatron), Alden Torres (aldenml)
  * Copyright (c) 2011-2014, FrostWire(R). All rights reserved.
- 
+
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -113,6 +113,9 @@ public class SearchManagerImpl implements SearchManager {
     }
 
     protected void onResults(SearchPerformer performer, List<? extends SearchResult> results) {
+
+System.out.println("SearchManagerImpl::onResults() nResults" + results.size());
+
         try {
             if (listener != null) {
                 listener.onResults(performer, results);

@@ -1,7 +1,7 @@
 /*
  * Created by Angel Leon (@gubatron), Alden Torres (aldenml)
  * Copyright (c) 2011-2014, FrostWire(R). All rights reserved.
- 
+
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -30,7 +30,7 @@ import com.frostwire.util.StringUtils;
 import com.frostwire.util.UserAgentGenerator;
 
 /**
- * 
+ *
  * @author gubatron
  * @author aldenml
  *
@@ -79,7 +79,7 @@ public abstract class WebSearchPerformer extends AbstractSearchPerformer {
 
     /**
      * Allow to perform the HTTP operation using the same internal http client.
-     * 
+     *
      * @param url
      * @return the web page (html)
      */
@@ -88,6 +88,9 @@ public abstract class WebSearchPerformer extends AbstractSearchPerformer {
     }
 
     public String fetch(String url, String cookie, Map<String, String> customHeaders) throws IOException {
+
+System.out.println("WebSearchPerformer::fetch() url=" + url);
+
         return client.get(url, timeout, DEFAULT_USER_AGENT, null, cookie, customHeaders);
     }
 
@@ -97,7 +100,7 @@ public abstract class WebSearchPerformer extends AbstractSearchPerformer {
 
     /**
      * Allow to perform the HTTP operation using the same internal http client.
-     * 
+     *
      * @param url
      * @return the raw bytes from the http connection
      */

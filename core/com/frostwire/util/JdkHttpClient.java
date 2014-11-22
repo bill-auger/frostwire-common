@@ -1,7 +1,7 @@
 /*
  * Created by Angel Leon (@gubatron), Alden Torres (aldenml)
  * Copyright (c) 2011-2014,, FrostWire(R). All rights reserved.
- 
+
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -81,17 +81,27 @@ final class JdkHttpClient implements HttpClient {
         ByteArrayOutputStream baos = null;
 
         try {
+
+System.out.println("JdkHttpClient::get()  IN url=" + url);
+
             baos = new ByteArrayOutputStream();
             get(url, baos, timeout, userAgent, referrer, cookie, -1, -1, customHeaders);
-
             result = new String(baos.toByteArray(), "UTF-8");
         } catch (java.net.SocketTimeoutException timeoutException) {
+
+System.out.println("JdkHttpClient::get() SocketTimeoutException url=" + url);
+
             throw timeoutException;
         } catch (IOException e) {
+
+System.out.println("JdkHttpClient::get() IOException url=" + url);
+
             throw e;
         } finally {
             closeQuietly(baos);
         }
+
+System.out.println("JdkHttpClient::get() OUT url=" + url);
 
         return result;
     }
@@ -278,6 +288,7 @@ final class JdkHttpClient implements HttpClient {
     }
 
     private void get(String url, OutputStream out, int timeout, String userAgent, String referrer, String cookie, int rangeStart, int rangeLength, final Map<String, String> customHeaders) throws IOException {
+System.out.println("JdkHttpClient::GET()  IN url=" + url);
         canceled = false;
         final URL u = new URL(url);
         final URLConnection conn = u.openConnection();
@@ -315,9 +326,9 @@ final class JdkHttpClient implements HttpClient {
         if ("gzip".equals(conn.getContentEncoding())) {
             in = new GZIPInputStream(in);
         }
-
+System.out.println("JdkHttpClient::GET() MID url=" + url);
         int httpResponseCode = getResponseCode(conn);
-
+System.out.println("JdkHttpClient::GET() url=" + url + " httpResponseCode=" + httpResponseCode);
         if (httpResponseCode != HttpURLConnection.HTTP_OK &&
                 httpResponseCode != HttpURLConnection.HTTP_PARTIAL &&
                 httpResponseCode != HttpURLConnection.HTTP_MOVED_TEMP &&
@@ -327,7 +338,7 @@ final class JdkHttpClient implements HttpClient {
 
         onHeaders(conn.getHeaderFields());
         checkRangeSupport(rangeStart, conn);
-
+System.out.println("JdkHttpClient::GET() ready? url=" + url);
         try {
             byte[] b = new byte[4096];
             int n = 0;
@@ -345,12 +356,19 @@ final class JdkHttpClient implements HttpClient {
             } else {
                 onComplete();
             }
+System.out.println("JdkHttpClient::GET() s'ok url=" + url);
+
         } catch (Exception e) {
+
+System.out.println("JdkHttpClient::GET() url=" + url + " Exception=" + e);
+
             onError(e);
         } finally {
             closeQuietly(in);
             closeQuietly(conn);
         }
+System.out.println("JdkHttpClient::GET() OUT url=" + url);
+
     }
 
     @Override

@@ -31,39 +31,53 @@ import com.frostwire.search.domainalias.DomainAliasManager;
  */
 public abstract class PagedWebSearchPerformer extends WebSearchPerformer {
 
-    private final int pages;
+    private final int nPages;
 
-    public PagedWebSearchPerformer(DomainAliasManager domainAliasManager, long token, String keywords, int timeout, int pages) {
+    public PagedWebSearchPerformer(DomainAliasManager domainAliasManager, long token, String keywords, int timeout, int nPages) {
         super(domainAliasManager, token, keywords, timeout);
-        this.pages = pages;
+        this.nPages = nPages;
     }
 
     @Override
     public void perform() {
-        for (int i = 1; !isStopped() && i <= pages; i++) {
-            onResults(this, searchPage(i));
+        for (int pageN = 1; !isStopped() && pageN <= nPages; pageN++) {
+            onResults(this, searchPage(pageN));
         }
     }
 
-    protected List<? extends SearchResult> searchPage(int page) {
-        List<? extends SearchResult> result = Collections.emptyList();
+    protected List<? extends SearchResult> searchPage(int pageN) {
+        List<? extends SearchResult> results = Collections.emptyList();
         try {
-            String url = getUrl(page, getEncodedKeywords());
+            String url = getUrl(pageN, getEncodedKeywords());
+
+System.out.println("PagedWebSearchPerformer::searchPage()  IN url=" + url);
+
             String text = fetchSearchPage(url);
             if (text != null) {
-                result = searchPage(text);
+
+System.out.println("PagedWebSearchPerformer::searchPage() MID url=" + url + " text=" + text);
+
+                results = searchPage(text);
             }
         } catch (Throwable e) {
+
+System.out.println("PagedWebSearchPerformer::searchPage() ERR url=" + getUrl(pageN, getEncodedKeywords()) + " Throwable=" + e);
+
             checkAccesibleDomains();
         }
-        return result;
+System.out.println("PagedWebSearchPerformer::searchPage() OUT url=" + getUrl(pageN, getEncodedKeywords()) + " nResults" + results.size());
+
+        return results;
     }
 
     protected String fetchSearchPage(String url) throws IOException {
+
+System.out.println("PagedWebSearchPerformer::fetchSearchPage() url=" + url);
+
         return fetch(url);
     }
 
-    protected abstract String getUrl(int page, String encodedKeywords);
+    protected abstract String getUrl(int pageN, String encodedKeywords);
 
     protected abstract List<? extends SearchResult> searchPage(String page);
 }
