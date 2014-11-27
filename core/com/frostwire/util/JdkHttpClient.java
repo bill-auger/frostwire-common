@@ -288,7 +288,9 @@ System.out.println("JdkHttpClient::get() OUT url=" + url);
     }
 
     private void get(String url, OutputStream out, int timeout, String userAgent, String referrer, String cookie, int rangeStart, int rangeLength, final Map<String, String> customHeaders) throws IOException {
-System.out.println("JdkHttpClient::GET()  IN url=" + url);
+
+System.out.println("JdkHttpClient::GET()   IN url=" + url);
+
         canceled = false;
         final URL u = new URL(url);
         final URLConnection conn = u.openConnection();
@@ -326,9 +328,11 @@ System.out.println("JdkHttpClient::GET()  IN url=" + url);
         if ("gzip".equals(conn.getContentEncoding())) {
             in = new GZIPInputStream(in);
         }
-System.out.println("JdkHttpClient::GET() MID url=" + url);
+
         int httpResponseCode = getResponseCode(conn);
-System.out.println("JdkHttpClient::GET() url=" + url + " httpResponseCode=" + httpResponseCode);
+
+System.out.println("JdkHttpClient::GET() MID1 url=" + url + " httpResponseCode=" + httpResponseCode);
+
         if (httpResponseCode != HttpURLConnection.HTTP_OK &&
                 httpResponseCode != HttpURLConnection.HTTP_PARTIAL &&
                 httpResponseCode != HttpURLConnection.HTTP_MOVED_TEMP &&
@@ -338,7 +342,9 @@ System.out.println("JdkHttpClient::GET() url=" + url + " httpResponseCode=" + ht
 
         onHeaders(conn.getHeaderFields());
         checkRangeSupport(rangeStart, conn);
-System.out.println("JdkHttpClient::GET() ready? url=" + url);
+
+System.out.println("JdkHttpClient::GET() MID2 url=" + url);
+
         try {
             byte[] b = new byte[4096];
             int n = 0;
@@ -356,19 +362,18 @@ System.out.println("JdkHttpClient::GET() ready? url=" + url);
             } else {
                 onComplete();
             }
-System.out.println("JdkHttpClient::GET() s'ok url=" + url);
+System.out.println("JdkHttpClient::GET() MID3 url=" + url);
 
         } catch (Exception e) {
 
-System.out.println("JdkHttpClient::GET() url=" + url + " Exception=" + e);
+System.out.println("JdkHttpClient::GET() MID3 ERR url=" + url + " Exception=" + e);
 
             onError(e);
         } finally {
             closeQuietly(in);
             closeQuietly(conn);
         }
-System.out.println("JdkHttpClient::GET() OUT url=" + url);
-
+System.out.println("JdkHttpClient::GET()  OUT url=" + url);
     }
 
     @Override

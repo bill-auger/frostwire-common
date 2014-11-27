@@ -114,15 +114,19 @@ public class SearchManagerImpl implements SearchManager {
 
     protected void onResults(SearchPerformer performer, List<? extends SearchResult> results) {
 
-System.out.println("SearchManagerImpl::onResults() nResults" + results.size());
+System.out.println("SearchManagerImpl::onResults()  IN nResults" + results.size());
 
         try {
             if (listener != null) {
                 listener.onResults(performer, results);
+
+System.out.println("SearchManagerImpl::onResults() MID");
             }
         } catch (Throwable e) {
             LOG.warn("Error sending results back to receiver: " + e.getMessage());
         }
+
+System.out.println("SearchManagerImpl::onResults() OUT");
     }
 
     protected void onFinished(long token) {

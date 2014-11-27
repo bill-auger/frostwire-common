@@ -66,7 +66,7 @@ public class BtdiggSearchResult extends AbstractTorrentSearchResult {
         this.torrentUrl = response.magnet;
         this.filename = parseFileName(response.name);
         this.infoHash = response.info_hash;
-        this.seeds = 42; // TODO: only available on details page
+        this.seeds = 42;
         this.creationTime = response.added;
         this.size = response.size;
     }
@@ -124,7 +124,7 @@ public class BtdiggSearchResult extends AbstractTorrentSearchResult {
             }
         } catch (UnsupportedEncodingException e) {
         }
-        return decodedFileName;
+        return decodedFileName + ".torrent";
     }
 
     private long parseSize(String group) {

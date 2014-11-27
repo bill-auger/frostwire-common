@@ -25,13 +25,13 @@ package com.frostwire.search.btdigg;
 public class BtdiggItem {
     public long files;       // number of files in the torrent
     public String info;      // url to details page
-    public long added;       // timestamp
-    public String name;      // torrent title
-    public long weight;      // dunno
+    public long added;       // created_at timestamp
+    public String name;      // friendly name
+    public long weight;      // popularity
     public String info_hash; // torrent hash
-    public long reqs;        // dunno
+    public long reqs;        // number of times downloaded
     public String magnet;    // magnet link
     public double ff;        // dunno
-    public long seen;        // dunno
-    public long size;        // download size
+    public long seen;        // updated_at timestamp
+    public long size;        // download size in bytes
 }

@@ -36,27 +36,32 @@ public final class PerformerResultListener implements SearchListener {
 
     @Override
     public void onResults(SearchPerformer performer, List<? extends SearchResult> results) {
-        List<SearchResult> list = new LinkedList<SearchResult>();
+        List<SearchResult> completeResults = new LinkedList<SearchResult>();
 
-System.out.println("PerformerResultListener::onResults() nResults" + results.size());
+System.out.println("PerformerResultListener::onResults()  IN nResults" + results.size());
 
-        for (SearchResult sr : results) {
-            if (sr instanceof CrawlableSearchResult) {
-                CrawlableSearchResult csr = (CrawlableSearchResult) sr;
+        for (SearchResult result : results) {
 
-                if (csr.isComplete()) {
-                    list.add(sr);
+System.out.println("PerformerResultListener::onResults() MID isCrawlable?=" + (result instanceof CrawlableSearchResult) +
+                   " isComplete?=" + (!(result instanceof CrawlableSearchResult) || ((CrawlableSearchResult)result).isComplete()));
+
+            if (result instanceof CrawlableSearchResult) {
+                CrawlableSearchResult crawlableResult = (CrawlableSearchResult) result;
+
+                if (crawlableResult.isComplete()) {
+                    completeResults.add(result);
                 }
 
-                manager.crawl(performer, csr);
+                manager.crawl(performer, crawlableResult);
             } else {
-                list.add(sr);
+                completeResults.add(result);
             }
         }
 
-        if (!list.isEmpty()) {
-            manager.onResults(performer, list);
+        if (!completeResults.isEmpty()) {
+            manager.onResults(performer, completeResults);
         }
+System.out.println("PerformerResultListener::onResults() OUT nResults" + completeResults.size());
     }
 
     public SearchManager getSearchManager() {
