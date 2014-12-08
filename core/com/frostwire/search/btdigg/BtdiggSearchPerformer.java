@@ -22,10 +22,11 @@ import java.util.LinkedList;
 import java.util.List;
 
 import com.frostwire.search.PagedWebSearchPerformer;
-// import com.frostwire.search.torrent.TorrentJsonSearchPerformer;
 import com.frostwire.search.SearchResult;
 import com.frostwire.search.domainalias.DomainAliasManager;
 import com.frostwire.util.JsonUtils;
+import com.google.gson.JsonSyntaxException;
+
 
 /**
  * @author gubatron
@@ -90,19 +91,22 @@ public class BtdiggSearchPerformer extends PagedWebSearchPerformer {
 System.out.println("BtdiggSearchPerformer::searchPage()  IN");
 
         List<SearchResult> results = new LinkedList<SearchResult>();
-        BtdiggResponse response = JsonUtils.toObject("{\"collection\":" + page + "}", BtdiggResponse.class);
+        try {
+            BtdiggResponse response = JsonUtils.toObject("{\"collection\":" + page + "}", BtdiggResponse.class);
 
-String json = JsonUtils.toJson(response, true);
-System.out.println("BtdiggSearchPerformer::searchPage() MID page=\n" + json);
-System.out.println("BtdiggSearchPerformer::searchPage() MID nItems=" + response.collection.size());
+System.out.println("BtdiggSearchPerformer::searchPage() MID nItems=" + response.collection.size() +
+                   " page=\n" + JsonUtils.toJson(response, true));
 
-        for (BtdiggItem item : response.collection) {
-            if (!isStopped()) {
+            for (BtdiggItem item : response.collection) {
+                if (!isStopped()) {
 
 System.out.println("BtdiggSearchPerformer::searchPage() add item=" + item.name);
 
-                results.add(new BtdiggSearchResult(item));
+                    results.add(new BtdiggSearchResult(item));
+                }
             }
+        } catch (JsonSyntaxException ex) {
+            System.out.println("BtdiggSearchPerformer::searchPage() (invalid JSON response): " + ex) ;
         }
 
 System.out.println("BtdiggSearchPerformer::searchPage() OUT nResults=" + results.size());

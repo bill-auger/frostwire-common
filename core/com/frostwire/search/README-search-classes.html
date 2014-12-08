@@ -1,0 +1,1038 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8" />
+<title>Hierarchies of Search Interfaces and Classes</title>
+<!--
+  to add new classes:
+    list all defined members in a pipe delimited string like:
+      var signatures = "private static final int N | public static void main(String[] args)" ;
+    create a class object like:
+      var ClassName = new Class("ClassName" , super_object , interface_objects , signatures) ;
+    then append the class object to its superclass subclasses array like:
+      SuperName.subclasses.push(ClassName) ;
+
+  schema:
+    aClass.className   => this class name
+    aClass.superclass  => this class direct superclass object
+    aClass.interfaces  => array of interface objects this class implements
+    aClass.signatures  => pipe delimited string of literal implementations
+    aClass.subclasses  => array of direct subclass objects
+    aClass.visibility  => internal
+    aClass.domElements => internal
+-->
+
+<style type="text/css">
+
+html { background-color: #000 ; color: #fff ; font-size: small ; }
+
+
+/* class header table */
+
+table.header-table img { width: 16px ; height: 16px ; }
+td.classes-toggle-td ,
+td.members-toggle-td   { width: 20% ; }
+td.header-td           { text-align: center ; color: #88f ; }
+td.members-toggle-td   { text-align: right ; }
+
+
+/* class table */
+
+table                 { width: 100% ; border-collapse: collapse ; }
+table.class-table     { border: 1px solid #88f ; margin-bottom: 3em ; }
+table.class-table tr  { vertical-align: top ; }
+tr.hierarchy-tr       { text-align: center ; border: 1px solid #88f ; color: #88f ; }
+tr.striped-tr         { background-color: #112 ; }
+td.class-td           { background-repeat: no-repeat ; }
+td.extensions-td ,
+td.implementations-td { border-left: 1px solid #88f ; padding-bottom: 1em ; }
+
+
+/* class name table */
+
+td.class-spacer-td { width: 16px ; }
+
+</style>
+
+
+<script type="text/javascript">
+
+var HEADER_TABLE_CSS       = 'header-table' ;
+var HEADER_TR_CSS          = 'header-tr' ;
+var CLASSES_TOGGLE_TD_CSS  = 'classes-toggle-td' ;
+var HEADER_TD_CSS          = 'header-td' ;
+var MEMBERS_TOGGLE_TD_CSS  = 'members-toggle-td' ;
+var CLASS_TABLE_CSS        = 'class-table' ;
+var HIERARCHY_TR_CSS       = 'hierarchy-tr' ;
+var CLASS_NAME_TH_CSS      = 'class-name-th' ;
+var SUPER_NAME_TH_CSS      = 'super-name-th' ;
+var INTERFACE_NAME_TH_CSS  = 'interface-name-th' ;
+var STRIPED_TR_CSS         = 'striped-tr' ;
+var CLASS_TD_CSS           = 'class-td' ;
+var CLASS_SPACER_TD_CSS    = 'class-spacer-td' ;
+var CLASS_NAME_TD_CSS      = 'class-name-td' ;
+var EXTENSIONS_TD_CSS      = 'extensions-td' ;
+var IMPLEMENTATIONS_TD_CSS = 'implementations-td' ;
+
+var CLASSES_TOGGLE_KEY = 'classes-toggle-elements' ;
+var MEMBERS_TOGGLE_KEY = 'members-toggle-elements' ;
+var TOGGLE_IMG_KEY     = 'hierarchy-toggle-img' ;
+var TOGGLE_SPAN_KEY    = 'hierarchy-toggle-span' ;
+var TOGGLE_TEXT_KEY    = 'hierarchy-toggle-text' ;
+var CLASS_TR_KEY       = 'class-tr' ;
+var CLASS_TD_KEY       = 'class-td' ;
+var IMPLEMENTED_KEY    = 'implemented-members' ;
+var UNIMPLEMENTED_KEY  = 'unimplemented-members' ;
+var EXTENSIONS_KEY     = 'extension-members' ;
+var VISIBILITY_KEY     = 'visibility' ;
+
+var MEMBERS_VISIBLE           = 001 ;
+var SUBCLASSES_VISIBLE        = 002 ;
+var HIERARCHY_MEMBERS_VISIBLE = 004 ;
+var HIERARCHY_CLASSES_VISIBLE = 010 ;
+
+var MAIN_HEADER_H2_TEXT    = "hierarchies of search interfaces and classes" ;
+var CLASSES_COLLAPSE_TEXT  = "collapse all" ;
+var CLASSES_EXPAND_TEXT    = "expand all" ;
+var MEMBERS_HIDE_TEXT      = "hide members" ;
+var MEMBERS_SHOW_TEXT      = "show members" ;
+var CLASS_NAME_TH_TEXT     = "class" ;
+var SUPER_NAME_TH_TEXT     = "extentions" ;
+var INTERFACE_NAME_TH_TEXT = "implementations" ;
+var ICONS_ATTRIBUTION_TEXT = "(PD icons by the tango-project)" ;
+
+var NODE_IMG_W   = 16 ;
+var COLLAPSE_IMG = "url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABmJLR0QA/wD/AP+gvaeTAAAACXBIWXMAAA3XAAAN1wFCKJt4AAAAB3RJTUUH3gwFBhsojsDVHgAAAMdJREFUOMvtkD0KwmAMhp/v84c6CC6Ck4NXaI8gzh7A1dUjiAfwAsXVCzgLeoH2EIKbuEnBny9xkEqL0oqLi4FASMiTvC/84/dh0iIYLyPA/3AvjhajAKCaafrzSZ+rKAa4Os1tqD7SANNw8zyUBXA6O3aHBFUQUUQhuSjOKTdRRKDXaeTAWUA8C7c5CcNBgLWG1Tp6kfACSDVlPNFu22N/PKdz884MW+RUp1VHVAvdLAQ4AWvM94BaBZqe/R6gGEoeKAYApYA7P8dAOE2iSx0AAAAASUVORK5CYII=)" ;
+var EXPAND_IMG   = "url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABmJLR0QAAAAAAAD5Q7t/AAAACXBIWXMAAA3XAAAN1wFCKJt4AAAAB3RJTUUH1gELEAARlER4oQAAANBJREFUOMvNkb0OwWAUhh/SxWC3cgfSuoHGYDZbO3RxB0TSxGQXsVoNJoOEG+hnN1osVmnip98xEIr6iwTvdvKdvPme58Cvk7j3YDk9HzCPo/K7FStuL/mg3PRcG8+1iRS9VfBSPi4w7jDHOZHIeHJiRJlb1SJbLSSAbXje91wbERA5WK93xubNDwBW65D5MkAEtBa0QLARwlDYaUFryGVS8QiAanQmFwjlUgGAwci/JlJP5VhOT4bThTT7M7ni//IZ89n0a2eMiaq1T7YVf5s9VHJLC4uyd44AAAAASUVORK5CYII=)" ;
+var TERMINAL_IMG = "url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABmJLR0QAAAAAAAD5Q7t/AAAACXBIWXMAAA3XAAAN1wFCKJt4AAAAB3RJTUUH1gELDzsiAFwSwgAAAIRJREFUOMvtkbEJg1AQhr8HadzAOivoCBkjrW1GCBkgC4itc8QFdIjUtiJE8+5PIcqzszOFHxwcB/93HAcH++PmJs3KGkg25pq6uKYAp2CYPG8XRhMOGL1WCWkqB9zz17IoFNB9PO+2RwIzYYJ+EN6LrwkzOMfRShwKmkdebT7h+P4/8QOsUy3bRuSA2AAAAABJRU5ErkJggg==)" ;
+var EDGE_IMG     = "url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABmJLR0QA/wD/AP+gvaeTAAAACXBIWXMAAA3XAAAN1wFCKJt4AAAAB3RJTUUH3gwFBg4uUBaWPwAAAHpJREFUOMulkrERwkAMBPf1QEA9bskl0YF7IKAKYhdABwTA60hILc9wG2t27m4EG0zzotv9oct11TQv2roLChogUVIK3kNk6n8BQDoJAJ4vM8EYhkCCT5qCTHODPeo/aBBhCg7RvAq9m4LzyRTsNKgFx94IZwP9hqz4AjjVJS8gj5/ZAAAAAElFTkSuQmCC)" ;
+var BLANK_IMG    = "url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABmJLR0QA/wD/AP+gvaeTAAAACXBIWXMAAA3XAAAN1wFCKJt4AAAAB3RJTUUH3gscFAoivV+sCwAAAHlJREFUOMtjYBhowIhLwiR1CQr/zOwYrOqY8Jnek+fC0JDuiNcFeA34/e8/w8PX38g3gJGBgeH/fwYKXPD3P8O/f//JN4CBgYHhHyUuYGBgYPj2i0IX/P1LgQH//zMw/PlHoQH//jFQFo1KEpx4DWDBJ1k3cx/D4AcAJtcmGiM5tawAAAAASUVORK5CYII=)" ;
+var FORK_IMG     = "url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABmJLR0QA/wD/AP+gvaeTAAAACXBIWXMAAA3XAAAN1wFCKJt4AAAAB3RJTUUH3gwFBhclXMTmrwAAAMVJREFUOMvVkq8KwnAUhb/725x/glgGJvEJTPoOZrPVN7JZV2wmg/gICxoEwWARFAwWg6j7XcsQBLfBRMGTLx/nnHsgQe1BoPPlXofTjbYHgSbdGVKkgAipSgVcb8rhdM8PEAFjPnCgCtbyXQduFsA18vzKqzs9isjWJUOOI/S6HQCsKkaEVrPKYr3zx7OVnwmoeML5Ymn4Jeo1j8hCuegQRZodAcAITGbhm4L1WPTc9AgFRzBxB+GoL79fosRbyD+kv3DwAB88PoQs5pIlAAAAAElFTkSuQmCC)" ;
+var CORNER_IMG   = "url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABmJLR0QA/wD/AP+gvaeTAAAACXBIWXMAAA3XAAAN1wFCKJt4AAAAB3RJTUUH3gwFBiUw3GlWNQAAALBJREFUOMvtkjsKwkAQQN/shvgpxCZgJZ7AxngHa++QG3mENF7AQjyChRaCYGEjKFjYWIiaHYuAYJENKIKFr14eb2cGCoiTVGfLvY4mG42TVIveGTwoIIIXr+B6Uw6n+/sCETDmgwJVcI7vFgRlgsDIcyuvdXoUkW1ACdYKw0EfAKeKEaHbabBY76LxdBWVCuqhcL442lGVVjMkc1CrWLIsDxLPIc2BXvGA8y/w5wd4AB+yNZUIqmfmAAAAAElFTkSuQmCC)" ;
+
+var ROOT_CLASS_NAME         = "Object" ;
+var ABSTRACT_ORPHAN_TEXT    = "<span style='color: red;'>(abstract class has no subclasses)</span>" ;
+var ABSTRACT_SINGLETON_TEXT = "<span style='color: red;'>(abstract class has only one subclass)</span>" ;
+
+
+var RowN = 0 ;
+var Body ;
+
+
+/* model */
+
+function InvalidArgsException(class_name , arg_n , expected)
+{
+  var message = class_name + ": invalid argument: #" + arg_n + " expected: " + expected ;
+
+  return { name: 'InvalidArgument' , message: message }
+}
+
+var Class = function(class_name , superclass_object , interface_objects , signatures)
+{
+  function parseSignatures(signatures_string)
+  {
+    function trimSignature(signature) { return signature.replace(/;/g , "").trim() ; }
+    function isNotEmpty(   signature) { return signature != '' }
+
+    return signatures_string.split('|').map(trimSignature).filter(isNotEmpty) ;
+  }
+
+  if (typeof class_name !== 'string')
+    throw InvalidArgsException(class_name , 0 , 'string') ;
+  if ((!(superclass_object instanceof Object) && superclass_object !== null) ||
+        (Array.isArray(superclass_object)))
+    throw InvalidArgsException(class_name , 1 , "Object or null") ;
+  if ( !(Array.isArray(interface_objects))    && interface_objects !== null)
+    throw InvalidArgsException(class_name , 2 , "Array or null") ;
+  if (typeof signatures !== 'string')
+    throw InvalidArgsException(class_name , 3 , 'string') ;
+
+  this.className   = class_name ;
+  this.superclass  = superclass_object ;
+  this.interfaces  = interface_objects ;
+  this.signatures  = parseSignatures(signatures)
+  this.subclasses  = new Array() ;
+  this.visibility  = HIERARCHY_CLASSES_VISIBLE | HIERARCHY_MEMBERS_VISIBLE |
+                     SUBCLASSES_VISIBLE        | MEMBERS_VISIBLE           ;
+  this.domElements = new Object() ;
+
+  if ((this instanceof Class) || (this instanceof AbstractClass))
+    while (!this.interfaces.length && !!superclass_object)
+    {
+      if (Array.isArray(superclass_object.interfaces))
+        this.interfaces = this.interfaces.concat(superclass_object.interfaces) ;
+      superclass_object = superclass_object.superclass ;
+    }
+} ;
+
+function Interface()
+{
+  var superclass_objects = arguments[1] ;
+  var interface_objects  = arguments[2] ;
+
+  if (!(superclass_objects instanceof Array))
+    throw InvalidArgsException(class_name , 1 , 'Array') ;
+  if (!!interface_objects.length)
+    throw InvalidArgsException(class_name , 2 , 'non-empty Array') ;
+
+  arguments[1] = null ;
+  Class.apply(this , arguments) ;
+  this.superclasses = superclass_objects ;
+}
+
+function AbstractClass() { Class.apply(this , arguments) ; }
+
+function RootClass()     { Class.apply(this , [arguments[0] , null , null , '']) ; }
+
+try
+{
+  RootClass    .prototype             = new Class() ;
+  AbstractClass.prototype             = new Class() ;
+  Interface    .prototype             = new Class() ;
+  RootClass    .prototype.constructor = RootClass ;
+  AbstractClass.prototype.constructor = AbstractClass ;
+  Interface    .prototype.constructor = Interface ;
+} catch(ex) {}
+
+
+/* functions */
+
+function buildDOM()
+{
+  Body                 = document.getElementsByTagName('body')[0] ;
+  var header_H2        = document.createElement('h2') ;
+  var header_text      = document.createTextNode(MAIN_HEADER_H2_TEXT) ;
+  var attribution_p    = document.createElement('p') ;
+  var attribution_text = document.createTextNode(ICONS_ATTRIBUTION_TEXT) ;
+
+  Body     .removeChild(Body.firstChild) ;
+  Body     .appendChild(header_H2) ;
+  header_H2.appendChild(header_text) ;
+
+  HierarchyObjects.forEach(function(ea) { appendHierarchy(ea) }) ;
+
+  Body.appendChild(attribution_p) ;
+  attribution_p.appendChild(attribution_text) ;
+}
+
+function appendHierarchy(hierarchy_object)
+{
+  var hierarchy_name = hierarchy_object.className ;
+  var subclasses     = hierarchy_object.subclasses ;
+
+  var header_table        = document.createElement('table') ;
+  var header_tr           = document.createElement('tr') ;
+  var classes_toggle_td   = document.createElement('td') ;
+  var classes_toggle_img  = document.createElement('img') ;
+  var classes_toggle_span = document.createElement('span') ;
+  var header_td           = document.createElement('td') ;
+  var header_text         = document.createTextNode(hierarchy_name) ;
+  var members_toggle_td   = document.createElement('td') ;
+  var members_toggle_img  = document.createElement('img') ;
+  var members_toggle_span = document.createElement('span') ;
+  var hierarchy_table     = document.createElement('table') ;
+  var hierarchy_tr        = document.createElement('tr') ;
+  var class_name_th       = document.createElement('th') ;
+  var class_name_text     = document.createTextNode(CLASS_NAME_TH_TEXT) ;
+  var super_name_th       = document.createElement('th') ;
+  var super_name_text     = document.createTextNode(SUPER_NAME_TH_TEXT) ;
+  var interface_name_th   = document.createElement('th') ;
+  var interface_name_text = document.createTextNode(INTERFACE_NAME_TH_TEXT) ;
+
+  header_table     .setAttribute('class' , HEADER_TABLE_CSS) ;
+  header_tr        .setAttribute('class' , HEADER_TR_CSS) ;
+  classes_toggle_td.setAttribute('class' , CLASSES_TOGGLE_TD_CSS) ;
+  header_td        .setAttribute('class' , HEADER_TD_CSS) ;
+  members_toggle_td.setAttribute('class' , MEMBERS_TOGGLE_TD_CSS) ;
+  hierarchy_table  .setAttribute('class' , CLASS_TABLE_CSS) ;
+  hierarchy_tr     .setAttribute('class' , HIERARCHY_TR_CSS) ;
+  class_name_th    .setAttribute('class' , CLASS_NAME_TH_CSS) ;
+  super_name_th    .setAttribute('class' , SUPER_NAME_TH_CSS) ;
+  interface_name_th.setAttribute('class' , INTERFACE_NAME_TH_CSS) ;
+
+  make_hierarchy_toggles(hierarchy_object , classes_toggle_td   , members_toggle_td  ,
+                                            classes_toggle_img  , members_toggle_img ,
+                                            classes_toggle_span , members_toggle_span) ;
+
+  Body             .appendChild(header_table) ;
+  header_table     .appendChild(header_tr) ;
+  header_tr        .appendChild(classes_toggle_td) ;
+  classes_toggle_td.appendChild(classes_toggle_img) ;
+  classes_toggle_td.appendChild(classes_toggle_span) ;
+  header_tr        .appendChild(header_td) ;
+  header_td        .appendChild(header_text) ;
+  header_tr        .appendChild(members_toggle_td) ;
+  members_toggle_td.appendChild(members_toggle_span) ;
+  members_toggle_td.appendChild(members_toggle_img) ;
+  Body             .appendChild(hierarchy_table) ;
+  hierarchy_table  .appendChild(hierarchy_tr) ;
+  hierarchy_tr     .appendChild(class_name_th) ;
+  class_name_th    .appendChild(class_name_text) ;
+  hierarchy_tr     .appendChild(super_name_th) ;
+  super_name_th    .appendChild(super_name_text) ;
+  hierarchy_tr     .appendChild(interface_name_th) ;
+  interface_name_th.appendChild(interface_name_text) ;
+
+  appendClasses(hierarchy_table , hierarchy_object) ;
+}
+
+function make_hierarchy_toggles(hierarchy_object , classes_toggle_td   , members_toggle_td  ,
+                                                   classes_toggle_img  , members_toggle_img ,
+                                                   classes_toggle_span , members_toggle_span)
+{
+  var classes_toggle_elements                      = new Object() ;
+  var members_toggle_elements                      = new Object() ;
+  classes_toggle_elements[TOGGLE_IMG_KEY]          = classes_toggle_img ;
+  members_toggle_elements[TOGGLE_IMG_KEY]          = members_toggle_img ;
+  classes_toggle_elements[TOGGLE_SPAN_KEY]         = classes_toggle_span ;
+  members_toggle_elements[TOGGLE_SPAN_KEY]         = members_toggle_span ;
+  classes_toggle_elements[TOGGLE_TEXT_KEY]         = { true:  CLASSES_COLLAPSE_TEXT ,
+                                                       false: CLASSES_EXPAND_TEXT   } ;
+  members_toggle_elements[TOGGLE_TEXT_KEY]         = { true:  MEMBERS_HIDE_TEXT     ,
+                                                       false: MEMBERS_SHOW_TEXT     } ;
+  hierarchy_object.domElements[CLASSES_TOGGLE_KEY] = classes_toggle_elements ;
+  hierarchy_object.domElements[MEMBERS_TOGGLE_KEY] = members_toggle_elements ;
+
+  setHierarchyVisibilityIndicators(hierarchy_object , CLASSES_TOGGLE_KEY , true) ;
+  setHierarchyVisibilityIndicators(hierarchy_object , MEMBERS_TOGGLE_KEY , true) ;
+  classes_toggle_td.onclick = function() { toggleHierarchyClasses(hierarchy_object) ; } ;
+  members_toggle_td.onclick = function() { toggleHierarchyMembers(hierarchy_object) ; } ;
+}
+
+function appendClasses(hierarchy_table , class_object)
+{
+  class_object.subclasses.forEach(function(subclass_object)
+  {
+    hierarchy_table.appendChild(makeClassTr(subclass_object)) ;
+
+    appendClasses(hierarchy_table , subclass_object) ;
+  }) ;
+}
+
+function makeClassTr(class_object)
+{
+  var class_tr           = document.createElement('tr') ;
+  var class_td           = makeClassNameTable(class_object) ;
+  var extensions_td      = document.createElement('td') ;
+  var implementations_td = document.createElement('td') ;
+
+  class_tr          .setAttribute('class' , ((++RowN % 2)? STRIPED_TR_CSS : '')) ;
+  class_td          .setAttribute('class' , CLASS_TD_CSS) ;
+  extensions_td     .setAttribute('class' , EXTENSIONS_TD_CSS) ;
+  implementations_td.setAttribute('class' , IMPLEMENTATIONS_TD_CSS) ;
+
+  var has_children        = !!class_object.subclasses.length ;
+  var has_implementations = !!class_object.signatures.length ;
+  if (has_children)
+    class_td.onclick = function() { toggleSubclasses(  class_object) ; } ;
+  if (has_implementations)
+    class_tr.onclick = function() { toggleClassMembers(class_object) ; } ;
+  class_object.domElements[CLASS_TR_KEY]        = class_tr ;
+
+  makeClassTdsHtml(class_object) ;
+  class_tr          .appendChild(class_td) ;
+  class_tr          .appendChild(extensions_td) ;
+  class_tr          .appendChild(implementations_td) ;
+  extensions_td     .innerHTML = class_object.domElements[EXTENSIONS_KEY] ;
+  implementations_td.innerHTML = class_object.domElements[IMPLEMENTED_KEY] ;
+
+  return class_tr ;
+}
+
+function makeClassNameTable(class_object)
+{
+  var class_td         = document.createElement('td') ;
+  var class_name_table = document.createElement('table') ;
+  var class_name_tr    = document.createElement('tr') ;
+  var spacer_td        = document.createElement('td') ;
+  var spacer_img       = document.createElement('img') ;
+  var class_name_td    = document.createElement('td') ;
+
+  class_object.domElements[CLASS_TD_KEY] = class_td ;
+  var indent_level                       = makeGraphImage(class_object , COLLAPSE_IMG) ;
+  var spacer_w                           = (NODE_IMG_W * indent_level) + 'px' ;
+
+  spacer_td    .setAttribute('class' , CLASS_SPACER_TD_CSS) ;
+  class_name_td.setAttribute('class' , CLASS_NAME_TD_CSS) ;
+  spacer_td    .style.width = spacer_w ;
+  spacer_img   .style.width = spacer_w ;
+  spacer_img   .src   = BLANK_IMG.match(/^url\((.*)\)$/)[1] ;
+
+  var n_subclasses    = class_object.subclasses.length ;
+  var class_name_text = class_object.className ;
+  if (class_object instanceof AbstractClass)
+    class_name_text += (n_subclasses == 0)? "<br />" + ABSTRACT_ORPHAN_TEXT    :
+                       (n_subclasses == 1)? "<br />" + ABSTRACT_SINGLETON_TEXT : "" ;
+
+  class_td        .appendChild(class_name_table) ;
+  class_name_table.appendChild(class_name_tr) ;
+  class_name_tr   .appendChild(spacer_td) ;
+  spacer_td       .appendChild(spacer_img) ;
+  class_name_tr   .appendChild(class_name_td) ;
+  class_name_td   .innerHTML = "<b>" + class_name_text + "</b>" ;
+
+  return class_td ;
+}
+
+function makeGraphImage(class_object , toggle_img)
+{
+  function isLastChild(class_object)
+  {
+    var superclass_object = getSuperclass(class_object) ;
+    var n_siblings        = superclass_object.subclasses.length - 1 ;
+    var is_last_child     = superclass_object.subclasses.indexOf(class_object) == n_siblings ;
+
+    return is_last_child ;
+  }
+
+  function indentPx(indent_level) { return (NODE_IMG_W * indent_level) + "px" ; }
+
+  var class_td = class_object.domElements[CLASS_TD_KEY] ; if (!class_td) return null ;
+
+  var superclass_object = getSuperclass(class_object) ;
+  var isToplevelClass   = superclass_object == Root ;
+  var is_last_child     = isLastChild(class_object) ;
+  var has_children      = !!class_object.subclasses.length ;
+  var edge_img          = (toggle_img == EXPAND_IMG)? BLANK_IMG : EDGE_IMG ;
+
+  var indent_level = 0 ;
+  var zeroPx       = "0px" ;
+  var imgPx        = indentPx(1) ;
+  var fillPxH      = indentPx(1) + " " + "100%" ;
+  var squarePx     = indentPx(1) + " " + indentPx(1) ;
+
+  var imgs_left  = new Array() ; var sizes_left = new Array() ; var posis_left = new Array() ;
+  var imgs_mid ,                     sizes_mid ,                    posis_mid ;
+  var imgs_right ,                   sizes_right ,                  posis_right ;
+
+  while (!!(class_object      = superclass_object)           &&
+         !!(superclass_object = getSuperclass(class_object)) &&
+            superclass_object != Root)
+  {
+    imgs_left .push((isLastChild(class_object))? BLANK_IMG : EDGE_IMG) ;
+    sizes_left.push(fillPxH) ;
+    posis_left.push(indentPx(indent_level++) + " " + zeroPx) ;
+  }
+
+  if (isToplevelClass) imgs_mid = sizes_mid = posis_mid = new Array() ;
+  else
+  {
+    var indent_mid = indentPx(indent_level++) ;
+    imgs_mid       = (is_last_child)? [CORNER_IMG , BLANK_IMG] : [FORK_IMG     , EDGE_IMG ] ;
+    sizes_mid      = [squarePx , fillPxH] ;
+    posis_mid      = [indent_mid   + " " + zeroPx , indent_mid   + " " + imgPx] ;
+  }
+
+  var indent_right = indentPx(indent_level++) ;
+  imgs_right       = (has_children) ? [toggle_img , edge_img ] : [TERMINAL_IMG , BLANK_IMG] ;
+  sizes_right      = [squarePx , fillPxH] ;
+  posis_right      = [indent_right + " " + zeroPx , indent_right + " " + imgPx] ;
+
+  var backgroundImages    = imgs_left .reverse().concat(imgs_mid) .concat(imgs_right) ;
+  var backgroundSizes     = sizes_left.reverse().concat(sizes_mid).concat(sizes_right) ;
+  var backgroundPositions = posis_left          .concat(posis_mid).concat(posis_right) ;
+
+  class_td.style.backgroundImage    = backgroundImages   .join(",") ;
+  class_td.style.backgroundSize     = backgroundSizes    .join(",") ;
+  class_td.style.backgroundPosition = backgroundPositions.join(",") ;
+
+  return indent_level ;
+}
+
+function makeClassTdsHtml(class_object)
+{
+  function mergeExtensions(merge_extensions)
+  {
+    merge_extensions.forEach(function(extension)
+    {
+      extensions[extension] = (extensions[extension])? ++extensions[extension] : 1 ;
+    }) ;
+  }
+
+  function isDirectSuperclass(superclass_name)
+  {
+    return superclass_objects.some(function(superclass_object)
+    {
+      return superclass_object.className == superclass_name
+    }) ;
+  }
+
+  var superclass_objects   = getSuperclasses(class_object) ;
+  var interface_objects    = class_object.interfaces ;
+  var signatures           = class_object.signatures ;
+  var has_implementations  = !!signatures.length ;
+  var implementations      = new Object() ;
+  var extensions           = new Object() ;
+  var unimplementeds       = new Object() ;
+  var extensions_html      = "" ;
+  var implementations_html = "" ;
+
+  // sort implemented members against interface chain
+  var sortedInterfaceSignatures = new Object() ;
+  binSignatures(interface_objects , signatures , sortedInterfaceSignatures) ;
+  Object.keys(sortedInterfaceSignatures).forEach(function(interface_name)
+  {
+    var sortedSignatures            = sortedInterfaceSignatures[interface_name] ;
+    implementations[interface_name] = sortedSignatures[IMPLEMENTED_KEY]   || [] ;
+    unimplementeds [interface_name] = sortedSignatures[UNIMPLEMENTED_KEY] || [] ;
+    mergeExtensions(                  sortedSignatures[EXTENSIONS_KEY])   || [] ;
+  }) ;
+
+  // sort implemented members against superclass chain
+  var sortedSuperclassSignatures = new Object() ;
+  var overrides                  = new Object() ;
+  var inheriteds                 = new Object() ;
+  var all_inheriteds             = new Array() ;
+  binSignatures(superclass_objects , signatures , sortedSuperclassSignatures) ;
+  Object.keys(sortedSuperclassSignatures).forEach(function(superclass_name)
+  {
+    var sortedSignatures        = sortedSuperclassSignatures[superclass_name] ;
+    overrides [superclass_name] =          sortedSignatures[IMPLEMENTED_KEY]    || [] ;
+    inheriteds[superclass_name] =          sortedSignatures[UNIMPLEMENTED_KEY]  || [] ;
+    all_inheriteds = all_inheriteds.concat(sortedSignatures[UNIMPLEMENTED_KEY]) || [] ;
+    mergeExtensions(                       sortedSignatures[EXTENSIONS_KEY])    || [] ;
+  }) ;
+
+  // distinguish interface overrides from superclass overrides
+  Object.keys(implementations).forEach(function(interface_name)
+  {
+    overrides[interface_name]  = new Array() ;
+    Object.keys(sortedSuperclassSignatures).forEach(function(superclass_name)
+    {
+      overrides[superclass_name] = overrides[superclass_name].filter(function(signature)
+      {
+        var is_override  = !!~implementations[interface_name].indexOf(signature) ;
+        if (is_override) overrides[interface_name].push(signature) ;
+
+        return !is_override ;
+      }) ;
+    }) ;
+  }) ;
+
+  // filter out inherited interface implementations
+  Object.keys(unimplementeds).forEach(function(interface_name)
+  {
+    unimplementeds[interface_name] = unimplementeds[interface_name].filter(function(signature)
+    {
+      return !~all_inheriteds.indexOf(signature) ;
+    }) ;
+  }) ;
+
+  // filter out potential extensions against other classes
+  // * interface implementations (not found in superclass chain)
+  // * non-interface superclass overrides (not found in interface chain)
+  var n_signature_bins = Object.keys(sortedInterfaceSignatures) .length +
+                         Object.keys(sortedSuperclassSignatures).length ;
+  extensions = Object.keys(extensions).filter(function(extension)
+  {
+    return extensions[extension] == n_signature_bins ;
+  });
+
+  // build implementations cell html
+  Object.keys(sortedInterfaceSignatures).reverse().forEach(function(interface_name , idx)
+  {
+    var newline         = (!!implementations_html)? "<br />" : "" ;
+    var implemented     = implementations[interface_name] ;
+    var overridden      = overrides      [interface_name] ;
+    var missing         = unimplementeds [interface_name] ;
+    var n_implemented   = implemented.length ;
+    var n_overridden    = overridden.length ;
+    var n_unimplemented = missing.length ;
+    var overrides_color = (class_object instanceof Interface)? '#f00' : '#ff0' ;
+
+    if (!has_implementations && !is_interface)
+      implementations_html += newline + "<b>" + interface_name + ":</b>" +
+                              "<br /><span style='color: red'>no implementations</span>" ;
+    else if (n_implemented || n_overridden || n_unimplemented)
+      implementations_html += newline + "<b>" + interface_name + ":</b>" ;
+    if (n_implemented)
+      implementations_html += makeSignaturesHtml("implementations" , implemented , '#0f0') ;
+    if (n_overridden)
+      implementations_html += makeSignaturesHtml("overrides"       , overridden  , '#ff0') ;
+    if (n_unimplemented)
+      implementations_html += makeSignaturesHtml("unimplemented"   , missing     , '#f00') ;
+  }) ;
+
+  // build extensions cell html for inherited and overridden members
+  var is_interface       = class_object instanceof Interface ;
+  var unimplemented_text = (is_interface)? "no extensions" : "no implementations" ;
+  var overrides_color    = (is_interface)? '#f00' : '#ff0' ;
+  Object.keys(sortedSuperclassSignatures).reverse().forEach(function(superclass_name , idx)
+  {
+    var newline    = ((!!extensions_html)? "<br />" : "") ;
+    var overridden = overrides[superclass_name] ;
+    if (!!overridden.length)
+      extensions_html += newline + "<b>" + superclass_name + ":</b>" +
+                         makeSignaturesHtml("overrides"  , overridden  , overrides_color) ;
+    else if (!has_implementations && is_interface)
+      extensions_html += newline + "<b>" + superclass_name + ":</b>" +
+                        "<br /><span style='color: red'>" + unimplemented_text + "</span>" ;
+    else if (isDirectSuperclass(superclass_name))
+      extensions_html += newline + "<b>" + superclass_name + "</b>" ;
+/*
+|   interpretation    |  signature location   | td | superclass list | interface list | color  |
+| unimplemented       |            interfaces | R  | X               | unimplementeds | red    |
+| extension inherited |      super            | X  | unimplementeds  | X              |        |
+| interface inherited |      super interfaces | X  | unimplementeds  | unimplementeds |        |
+| extensions          | self                  | C  | extensions      | extensions     | green  |
+| implemented         | self       interfaces | R  | extensions      | implementeds   | green  |
+| extension override  | self super            | C  | implementeds    | extensions     | yellow |
+| interface override  | self super interfaces | C  | implementeds    | implementeds   | red    |
+*/
+/* TODO:
+  listed both as unimplemented interface and as implemented non-interface
+    public T fromMatcher(SearchMatcher matcher)               // interface definition
+    public TPBSearchResult fromMatcher(SearchMatcher matcher)
+
+  direct superclass not listed if no overrides
+
+  interface overrides listed both as implementations and override
+    implementations:
+      public void crawl(CrawlableSearchResult sr)
+    overrides:
+      public void crawl(CrawlableSearchResult sr)
+
+  not sure whats happening here (why both 'no implementations' and 'unimplemented'?)
+    AbstractFileSearchResult AbstractSearchResult
+    Object:
+      no implementations
+    SearchResult:
+      no implementations
+      unimplemented:
+        public String getDisplayName()
+        public String getDetailsUrl()
+        public String getSource()
+    FileSearchResult:
+      no implementations
+      unimplemented:
+        public static final long UNKNOWN_SIZE
+        public String getFilename()
+        public long getSize()
+
+*/
+// console.log(class_object.className + "=>" + superclass_object.className + " overrides=" + overrides.length + " extensions=" + extensions.length + " unimplementeds=" + sortedSignatures[UNIMPLEMENTED_KEY].length) ;
+// console.log(class_object.className + "=>" + superclass_object.className + " overrides=" + overrides[0] + " unimplementeds=" + sortedSignatures[UNIMPLEMENTED_KEY][0]); }
+  }) ;
+
+  // build extensions cell html for locally defined members
+  if (extensions.length)
+    extensions_html += makeSignaturesHtml("extensions" , extensions , '#0f0') ;
+
+  class_object.domElements[EXTENSIONS_KEY]  = extensions_html ;
+  class_object.domElements[IMPLEMENTED_KEY] = implementations_html ;
+}
+
+function getSuperclasses(class_object)
+{
+  function removeNulls(superclass_object) { return superclass_object !== null ; }
+
+  return (!!class_object)                                                               ?
+           (class_object.superclasses || [class_object.superclass]).filter(removeNulls) :
+           new Array()                                                                  ;
+}
+
+function getSuperclass(class_object)
+{
+  return getSuperclasses(class_object).filter(function(superclass_object)
+  {
+    return superclass_object == Root ||
+           !!~(superclass_object.subclasses.indexOf(class_object))
+  })[0] ;
+}
+
+function binSignatures(superclass_objects , signatures , sortedSignatures)
+{
+  function collectSignatures(super_objects)
+  {
+    super_objects.forEach(function(superclass_object)
+    {
+      superclass_signatures[superclass_object.className] = superclass_object.signatures ;
+      collectSignatures(getSuperclasses(superclass_object)) ;
+    }) ;
+  }
+
+  function copyArray(signatures)
+  {
+    return signatures.map(function(signature) { return signature ; }) ;
+  }
+
+  var superclass_signatures = new Object() ;
+  collectSignatures(superclass_objects) ;
+  Object.keys(superclass_signatures).forEach(function(superclass_name)
+  {
+    var unimplementeds  = copyArray(superclass_signatures[superclass_name]) ;
+    var implementations = new Array() ;
+    var extensions      = new Array() ;
+    signatures.forEach(function(signature)
+    {
+      var idx , is_implemented = !!~(idx = unimplementeds.indexOf(signature)) ;
+      if (is_implemented)
+      {
+        unimplementeds.splice(idx , 1) ;
+        implementations = implementations.concat(signature) ;
+      }
+      else extensions   = extensions     .concat(signature) ;
+    }) ;
+
+    sortedSignatures[superclass_name]                    = new Object() ;
+    sortedSignatures[superclass_name][IMPLEMENTED_KEY]   = implementations || [] ;
+    sortedSignatures[superclass_name][UNIMPLEMENTED_KEY] = unimplementeds || [];
+    sortedSignatures[superclass_name][EXTENSIONS_KEY]    = extensions || [] ;
+  }) ;
+}
+
+function makeSignaturesHtml(heading , signatures , color)
+{
+  function breakOnCommas(signature)
+  {
+    return signature.split(',').map(function(ea){ return ea.replace(/\s/g , "&nbsp;")})
+                    .join(", ") ;
+  }
+
+  var line_one_pad = "<br />&nbsp;&nbsp;" ;
+  var line_two_pad = "<br />&nbsp;&nbsp;&nbsp;&nbsp;" ;
+
+  return line_one_pad + heading + ":"                     + "</span>"    +
+         line_two_pad + "<span style='color: "            + color + "'>" +
+         signatures.map(breakOnCommas).join(line_two_pad) + "</span>"    ;
+}
+
+function toggleHierarchyClasses(hierarchy_object)
+{
+  function setSubclassesVisibility(subclass_objects)
+  {
+    subclass_objects.forEach(function(subclass_object)
+    {
+      setClassesVisibility(   subclass_object , toggle_state) ;
+      setSubclassesVisibility(subclass_object.subclasses) ;
+    }) ;
+  }
+
+  var toggle_state = toggleVisibility(hierarchy_object , HIERARCHY_CLASSES_VISIBLE) ;
+  setHierarchyVisibilityIndicators(hierarchy_object , CLASSES_TOGGLE_KEY , toggle_state) ;
+  setSubclassesVisibility(hierarchy_object.subclasses) ;
+}
+
+function toggleHierarchyMembers(hierarchy_object)
+{
+  function setSubclassMembersVisibility(subclass_objects)
+  {
+    subclass_objects.forEach(function(subclass_object)
+    {
+      setClassMembersVisibility(   subclass_object , toggle_state) ;
+      setSubclassMembersVisibility(subclass_object.subclasses) ;
+    }) ;
+  }
+
+  var toggle_state = toggleVisibility(hierarchy_object , HIERARCHY_MEMBERS_VISIBLE) ;
+  setHierarchyVisibilityIndicators(hierarchy_object , MEMBERS_TOGGLE_KEY , toggle_state) ;
+  setSubclassMembersVisibility(hierarchy_object.subclasses) ;
+}
+
+function setHierarchyVisibilityIndicators(hierarchy_object , elements_key , toggle_state)
+{
+  function parseImgSrc(data_uri) { return data_uri.match(/^url\((.*)\)$/)[1] ; }
+
+  var toggle_elements   = hierarchy_object.domElements[elements_key] ;
+  var toggle_img        = toggle_elements[TOGGLE_IMG_KEY] ;
+  var toggle_span       = toggle_elements[TOGGLE_SPAN_KEY] ;
+  var toggle_text       = toggle_elements[TOGGLE_TEXT_KEY][toggle_state] ;
+  toggle_img .src       = parseImgSrc((toggle_state)? TERMINAL_IMG : EXPAND_IMG) ;
+  toggle_span.innerHTML = toggle_text ;
+}
+
+function toggleClassMembers(class_object)
+{
+  var toggle_state = toggleVisibility(class_object , MEMBERS_VISIBLE) ;
+  setClassMembersVisibility(class_object , toggle_state) ;
+}
+
+function setClassMembersVisibility(class_object , toggle_state)
+{
+  function name(a_class)        { return a_class.className ; }
+  function class_names(classes) { return classes.map(name).join(",<br />") ; }
+
+  if (getVisibility( class_object , MEMBERS_VISIBLE) != toggle_state)
+    toggleVisibility(class_object , MEMBERS_VISIBLE) ;
+
+  var class_tr                   = class_object.domElements[CLASS_TR_KEY] ;
+  var extensions_td              = class_tr.cells[1] ;
+  var implementations_td         = class_tr.cells[2] ;
+  var superclass_objects         = getSuperclasses(class_object) ;
+  var extensions_brief_html      = class_names(superclass_objects) ;
+  var implementations_brief_html = class_names(class_object.interfaces) ;
+
+  extensions_td     .innerHTML = (toggle_state)? class_object.domElements[EXTENSIONS_KEY] :
+                                                 extensions_brief_html                    ;
+  implementations_td.innerHTML = (toggle_state)? class_object.domElements[IMPLEMENTED_KEY] :
+                                                 implementations_brief_html                ;
+}
+
+function toggleSubclasses(class_object)
+{
+  var toggle_state = toggleVisibility(class_object , SUBCLASSES_VISIBLE) ;
+  setClassesVisibility(class_object , toggle_state)
+}
+
+function setClassesVisibility(toggled_class_object , toggle_state)
+{
+  function setSubclassesVisibility(class_object , toggle_state)
+  {
+    if (getVisibility( class_object , SUBCLASSES_VISIBLE) != toggle_state)
+      toggleVisibility(class_object , SUBCLASSES_VISIBLE) ;
+
+    makeGraphImage(class_object , (toggle_state)? COLLAPSE_IMG : EXPAND_IMG) ;
+    class_object.subclasses.forEach(function(subclass_object)
+    {
+      subclass_object.domElements[CLASS_TR_KEY].style.display = (toggle_state)? '' : 'none' ;
+      setSubclassesVisibility(subclass_object , toggle_state) ;
+    }) ;
+  }
+
+  setSubclassesVisibility(toggled_class_object , toggle_state) ;
+}
+
+function toggleVisibility(class_object , mask)
+{
+  class_object.visibility = class_object.visibility ^ mask ;
+
+  return getVisibility(class_object , mask) ;
+}
+
+function getVisibility(class_object , mask) { return !!(class_object.visibility & mask) ; }
+
+
+try
+{
+/* "toplevel" hierarchy nodes (direct subclasses of Object) */
+
+var Root = new RootClass(  ROOT_CLASS_NAME) ;
+
+
+/* search interfaces */
+
+var SearchPerformerMembers      = "public long getToken() | public void registerListener(SearchListener listener) | public void perform() | public void crawl(CrawlableSearchResult sr) | public void stop() | public boolean isStopped()" ;
+var RegexSearchPerformerMembers = "public Pattern getPattern() | public T fromMatcher(SearchMatcher matcher)" ;
+
+var SearchResultMembers                 = "public String getDisplayName() | public String getDetailsUrl() | public long getCreationTime() | public String getSource() | public License getLicense() | public String getThumbnailUrl()" ;
+var CrawledSearchResultMembers          = "public CrawlableSearchResult getParent()" ;
+var FileSearchResultMembers             = "public static final long UNKNOWN_SIZE | public String getFilename() | public long getSize()" ;
+var HttpSearchResultMembers             = "public String getDownloadUrl()" ;
+var TorrentSearchResultMembers          = "public long getCreationTime() | public String getTorrentUrl() | public int getSeeds() | public String getHash()" ;
+var StreamableSearchResultMembers       = "public String getStreamUrl()" ;
+var CrawlableSearchResultMembers        = "public boolean isComplete()" ;
+var TorrentCrawlableSearchResultMembers =
+//"" ;
+"public String getHash() | public TODO tokeHash()" ;
+
+var SearchPerformer      = new Interface("SearchPerformer"                                               , [Root]            , [] , SearchPerformerMembers) ;
+var RegexSearchPerformer = new Interface("RegexSearchPerformer &lt;T&nbsp;extends&nbsp;SearchResult&gt;" , [SearchPerformer] , [] , RegexSearchPerformerMembers) ;
+
+var SearchResult                  = new Interface("SearchResult"                 , [Root]                                        , [] , SearchResultMembers) ;
+var CrawlableSearchResult         = new Interface("CrawlableSearchResult"        , [SearchResult]                                , [] , CrawlableSearchResultMembers) ;
+var CrawledSearchResult           = new Interface("CrawledSearchResult"          , [SearchResult]                                , [] , CrawledSearchResultMembers) ;
+var FileSearchResult              = new Interface("FileSearchResult"             , [SearchResult]                                , [] , FileSearchResultMembers) ;
+var HttpSearchResult              = new Interface("HttpSearchResult"             , [FileSearchResult]                            , [] , HttpSearchResultMembers) ;
+var TorrentSearchResult           = new Interface("TorrentSearchResult"          , [FileSearchResult]                            , [] , TorrentSearchResultMembers) ;
+var StreamableSearchResult        = new Interface("StreamableSearchResult"       , [SearchResult]                                , [] , StreamableSearchResultMembers) ;
+var TorrentCrawlableSearchResult  = new Interface("TorrentCrawlableSearchResult" , [CrawlableSearchResult , TorrentSearchResult] , [] , TorrentCrawlableSearchResultMembers) ;
+var TorrentCrawlableSearchResultA = new Interface("TorrentCrawlableSearchResult" , [CrawlableSearchResult , TorrentSearchResult] , [] , TorrentCrawlableSearchResultMembers) ;
+var TorrentCrawlableSearchResultB = new Interface("TorrentCrawlableSearchResult" , [CrawlableSearchResult , TorrentSearchResult] , [] , TorrentCrawlableSearchResultMembers) ;
+
+var SearchInterfaces = new RootClass("Search Interfaces") ;
+SearchInterfaces         .subclasses.push(SearchPerformer) ;
+  SearchPerformer        .subclasses.push(RegexSearchPerformer) ;
+SearchInterfaces         .subclasses.push(SearchResult) ;
+  SearchResult           .subclasses.push(CrawlableSearchResult) ;
+    CrawlableSearchResult.subclasses.push(TorrentCrawlableSearchResultA) ;
+  SearchResult           .subclasses.push(CrawledSearchResult) ;
+  SearchResult           .subclasses.push(FileSearchResult) ;
+    FileSearchResult     .subclasses.push(HttpSearchResult) ;
+    FileSearchResult     .subclasses.push(TorrentSearchResult) ;
+    TorrentSearchResult  .subclasses.push(TorrentCrawlableSearchResultB) ;
+  SearchResult           .subclasses.push(StreamableSearchResult) ;
+
+
+/* search performers */
+
+var AbstractSearchPerformerMembers      = "private static final Logger LOG | private final long token | private SearchListener listener | private boolean stopped | public long getToken() | public void registerListener(SearchListener listener) | public void stop() | public boolean isStopped() | protected void onResults(SearchPerformer performer, List<? extends SearchResult> results)" ;
+var WebSearchPerformerMembers           = "private static final Logger LOG | private static final String DEFAULT_USER_AGENT | private static final String[] STREAMABLE_EXTENSIONS | private final String keywords | private final String encodedKeywords | private final int timeout | private final HttpClient client | private final DomainAliasManager domainAliasManager | public void crawl(CrawlableSearchResult sr) | public final String getKeywords() | public final String getEncodedKeywords() | public String fetch(String url) | public String fetch(String url, String cookie, Map<String, String> customHeaders) | public String post(String url, Map<String, String> formData) | public final byte[] fetchBytes(String url) | protected final byte[] fetchBytes(String url, String referrer, int timeout) | protected final boolean isStreamable(String filename) | public String getDomainNameToUse() | public String getDefaultDomainName() | public DomainAliasManager getDomainAliasManager() | protected final void checkAccesibleDomains()" ;
+var PagedWebSearchPerformerMembers      = "private final int nPages | public void perform() | protected List<? extends SearchResult> searchPage(int pageN) | protected String fetchSearchPage(String url) | protected abstract String getUrl(int pageN, String encodedKeywords) | protected abstract List<? extends SearchResult> searchPage(String page)" ;
+var BtdiggSearchPerformerMembers        = "private static final String API_URL | private static final String QUERY_PARAM | private static final String PAGE_PARAM | private static final String ORDER_PARAM | protected String getUrl(int page, String encodedKeywords) | protected List<? extends SearchResult> searchPage(String page)" ;
+var CrawlPagedWebSearchPerformerMembers = "private static final Logger LOG | private static final int DEFAULT_CRAWL_TIMEOUT | private static final int DEFAULT_MAGNET_DOWNLOAD_TIMEOUT | private static CrawlCache cache | private static MagnetDownloader magnetDownloader | private int numCrawls | public static void setCache(CrawlCache cache) | public static MagnetDownloader getMagnetDownloader() | public static void setMagnetDownloader(MagnetDownloader magnetDownloader) | public void crawl(CrawlableSearchResult sr) | protected abstract String getCrawlUrl(T sr) | protected abstract List<? extends SearchResult> crawlResult(T sr, byte[] data) | protected byte[] fetchMagnet(String magnet) | private byte[] cacheGet(String key) | private void cachePut(String key, byte[] data) | private void cacheRemove(String key) | private T cast(CrawlableSearchResult sr) | public static void clearCache() | public static long getCacheSize()" ;
+var ArchiveorgSearchPerformerMembers    = "private static final int MAX_RESULTS | protected String getUrl(int page, String encodedKeywords) | protected List<? extends SearchResult> searchPage(String page) | protected String getCrawlUrl(ArchiveorgSearchResult sr) | protected List<? extends SearchResult> crawlResult(ArchiveorgSearchResult sr, byte[] data) | private List<ArchiveorgFile> readFiles(String json) | private String cleanName(String name) | private long calcTotalSize(List<ArchiveorgFile> files) | private boolean filter(ArchiveorgFile file)" ;
+var YouTubeSearchPerformerMembers       = "private static final int MAX_RESULTS | protected String getCrawlUrl(YouTubeSearchResult sr) | protected List<? extends SearchResult> crawlResult(YouTubeSearchResult sr, byte[] data) | protected String getUrl(int page, String encodedKeywords) | protected List<? extends SearchResult> searchPage(String page) | private String fixJson(String json) | private boolean isDash(LinkInfo info)" ;
+var TorrentSearchPerformerMembers       = "protected String getCrawlUrl(TorrentCrawlableSearchResult sr) | protected List<? extends SearchResult> crawlResult(TorrentCrawlableSearchResult sr, byte[] data)" ;
+var TorrentJsonSearchPerformerMembers   = "private static final int DEFAULT_NUM_CRAWLS | private final Comparator<T> itemComparator | protected final List<? extends SearchResult> searchPage(String page) | protected abstract List<T> parseJson(String json) | protected abstract R fromItem(T item)" ;
+var ExtratorrentSearchPerformerMembers  = "protected String getUrl(int page, String encodedKeywords) | protected List<ExtratorrentItem> parseJson(String json) | protected ExtratorrentSearchResult fromItem(ExtratorrentItem item)" ;
+var KATSearchPerformerMembers           = "protected String getUrl(int page, String encodedKeywords) | protected List<KATItem> parseJson(String json) | protected KATSearchResult fromItem(KATItem item)" ;
+var MininovaSearchPerformerMembers      = "protected String getUrl(int page, String encodedKeywords) | protected List<MininovaVuzeItem> parseJson(String json) | protected MininovaVuzeSearchResult fromItem(MininovaVuzeItem item)" ;
+var CrawlRegexSearchPerformerMembers    = "private final int regexMaxResults | protected final List<? extends SearchResult> searchPage(String page)" ;
+var TPBSearchPerformerMembers           = "private static final String REGEX | private static final Pattern PATTERN | private static final int MAX_RESULTS | public Pattern getPattern() | public TPBSearchResult fromMatcher(SearchMatcher matcher) | protected String getUrl(int page, String encodedKeywords) | protected String getCrawlUrl(TPBSearchResult sr) | protected List<? extends SearchResult> crawlResult(TPBSearchResult sr, byte[] data)" ;
+var TorrentRegexSearchPerformerMembers  = "private final static Logger LOG | private final Pattern preliminarSearchResultspattern | private final Pattern htmlDetailPagePattern | public Pattern getPattern() | protected String getCrawlUrl(CrawlableSearchResult sr) | protected List<? extends SearchResult> crawlResult(CrawlableSearchResult sr, byte[] data) | protected int prefixOffset(String html) | protected int suffixOffset(String html) | private String reduceHtml(String html) | protected abstract T fromHtmlMatcher(CrawlableSearchResult sr, SearchMatcher matcher)" ;
+var BitSnoopSearchPerformerMembers      = "private static final int MAX_RESULTS | private static final String REGEX | private static final String HTML_REGEX | public CrawlableSearchResult fromMatcher(SearchMatcher matcher) | protected String getUrl(int page, String encodedKeywords) | protected BitSnoopSearchResult fromHtmlMatcher(CrawlableSearchResult sr, SearchMatcher matcher)" ;
+var EztvSearchPerformerMembers          = "private static final int MAX_RESULTS | private static final String REGEX | private static final String HTML_REGEX | public CrawlableSearchResult fromMatcher(SearchMatcher matcher) | protected String fetchSearchPage(String url) | protected String getUrl(int page, String encodedKeywords) | protected EztvSearchResult fromHtmlMatcher(CrawlableSearchResult sr, SearchMatcher matcher)" ;
+var MonovaSearchPerformerMembers        = "private static final int MAX_RESULTS | private static final String REGEX | private static final String HTML_REGEX | public CrawlableSearchResult fromMatcher(SearchMatcher matcher) | protected String getUrl(int page, String encodedKeywords) | protected String fetchSearchPage(String url) | protected MonovaSearchResult fromHtmlMatcher(CrawlableSearchResult sr, SearchMatcher matcher)" ;
+var TorLockSearchPerformerMembers       = "private static final int MAX_RESULTS | private static final String REGEX | private static final String HTML_REGEX | public CrawlableSearchResult fromMatcher(SearchMatcher matcher) | protected String getUrl(int page, String encodedKeywords) | protected TorLockSearchResult fromHtmlMatcher(CrawlableSearchResult sr, SearchMatcher matcher)" ;
+var TorrentsfmSearchPerformerMembers    = "private static final int MAX_RESULTS | private static final String REGEX | private static final String HTML_REGEX | private static final String EO_REGEX | private static final int EO_REGEX_LENGTH | public CrawlableSearchResult fromMatcher(SearchMatcher matcher) | protected String getUrl(int page, String encodedKeywords) | protected TorrentsfmSearchResult fromHtmlMatcher(CrawlableSearchResult sr, SearchMatcher matcher) | protected int prefixOffset(String html) | protected int suffixOffset(String html) | public static void main(String[] args)" ;
+var YifySearchPerformerMembers          = "private static final int MAX_RESULTS | private static final String HTML_REGEX | private static final String REGEX | public CrawlableSearchResult fromMatcher(SearchMatcher matcher) | protected String getUrl(int page, String encodedKeywords) | protected YifySearchResult fromHtmlMatcher(CrawlableSearchResult sr, SearchMatcher matcher) | public static void main(String[] args)" ;
+var FrostClickSearchPerformerMembers    = "private static final Logger LOG | private static final int MAX_RESULTS | private final Map<String, String> customHeaders | protected String getUrl(int page, String encodedKeywords) | protected List<? extends SearchResult> searchPage(int page) | protected List<? extends SearchResult> searchPage(String page) | private Map<String, String> buildCustomHeaders(UserAgent userAgent)" ;
+var PagedRegexSearchPerformerMembers    = "private final int regexMaxResults | protected final List<? extends SearchResult> searchPage(String page)" ;
+var SoundcloudSearchPerformerMembers    = "private static final String CLIENT_ID | private static final String APP_VERSION | protected String getUrl(int page, String encodedKeywords) | protected List<? extends SearchResult> searchPage(String page)" ;
+
+var AbstractSearchPerformer      = new AbstractClass("AbstractSearchPerformer"                                                                                                   , Root                                                                          , [SearchPerformer] ,           AbstractSearchPerformerMembers) ;
+var WebSearchPerformer           = new AbstractClass("WebSearchPerformer"                                                                                                        , AbstractSearchPerformer                                                       , [] ,                          WebSearchPerformerMembers) ;
+var PagedWebSearchPerformer      = new AbstractClass("PagedWebSearchPerformer"                                                                                                   , WebSearchPerformer                                                            , [] ,                          PagedWebSearchPerformerMembers) ;
+var BtdiggSearchPerformer        = new Class("BtdiggSearchPerformer"                                                                                                             , PagedWebSearchPerformer                                                       , [] ,                          BtdiggSearchPerformerMembers) ;
+var CrawlPagedWebSearchPerformer = new AbstractClass("CrawlPagedWebSearchPerformer &lt;T&nbsp;extends&nbsp;CrawlableSearchResult&gt;"                                            , PagedWebSearchPerformer                                                       , [] ,                          CrawlPagedWebSearchPerformerMembers) ;
+var ArchiveorgSearchPerformer    = new Class("ArchiveorgSearchPerformer"                                                                                                         , CrawlPagedWebSearchPerformer /*&lt;ArchiveorgSearchResult&gt;*/               , [] ,                          ArchiveorgSearchPerformerMembers) ;
+var YouTubeSearchPerformer       = new Class("YouTubeSearchPerformer"                                                                                                            , CrawlPagedWebSearchPerformer /*&lt;YouTubeSearchResult&gt;*/                  , [] ,                          YouTubeSearchPerformerMembers) ;
+var TorrentSearchPerformer       = new AbstractClass("TorrentSearchPerformer"                                                                                                    , CrawlPagedWebSearchPerformer /*&lt;TorrentCrawlableSearchResult&gt;*/         , [] ,                          TorrentSearchPerformerMembers) ;
+var TorrentJsonSearchPerformer   = new AbstractClass("TorrentJsonSearchPerformer &lt;T&nbsp;extends&nbsp;ComparableTorrentJsonItem, R&nbsp;extends&nbsp;TorrentSearchResult&gt;" , TorrentSearchPerformer                                                        , [] ,                          TorrentJsonSearchPerformerMembers) ;
+var ExtratorrentSearchPerformer  = new Class("ExtratorrentSearchPerformer"                                                                                                       , TorrentJsonSearchPerformer /*&lt;ExtratorrentItem, ExtratorrentSearchResult&gt;*/ , [] ,                          ExtratorrentSearchPerformerMembers) ;
+var KATSearchPerformer           = new Class("KATSearchPerformer"                                                                                                                , TorrentJsonSearchPerformer /*&lt;KATItem, KATSearchResult&gt;*/                   , [] ,                          KATSearchPerformerMembers) ;
+var MininovaSearchPerformer      = new Class("MininovaSearchPerformer"                                                                                                           , TorrentJsonSearchPerformer /*&lt;MininovaVuzeItem, MininovaVuzeSearchResult&gt;*/ , [] ,                          MininovaSearchPerformerMembers) ;
+var CrawlRegexSearchPerformer    = new AbstractClass("CrawlRegexSearchPerformer &lt;T&nbsp;extends&nbsp;CrawlableSearchResult&gt;"                                               , CrawlPagedWebSearchPerformer /*&lt;T&gt;*/                                        , [RegexSearchPerformer]/*&lt;T&gt;*/ , CrawlRegexSearchPerformerMembers) ;
+var TPBSearchPerformer           = new Class("TPBSearchPerformer"                                                                                                                , CrawlRegexSearchPerformer /*&lt;TPBSearchResult&gt;*/                             , [] ,                          TPBSearchPerformerMembers) ;
+var TorrentRegexSearchPerformer  = new AbstractClass("TorrentRegexSearchPerformer"                                                                                               , CrawlRegexSearchPerformer /*&lt;CrawlableSearchResult&gt;*/                       , [] ,                          TorrentRegexSearchPerformerMembers) ;
+var BitSnoopSearchPerformer      = new Class("BitSnoopSearchPerformer"                                                                                                           , TorrentRegexSearchPerformer /*&lt;BitSnoopSearchResult&gt;*/                      , [] ,                          BitSnoopSearchPerformerMembers) ;
+var EztvSearchPerformer          = new Class("EztvSearchPerformer"                                                                                                               , TorrentRegexSearchPerformer /*&lt;EztvSearchResult&gt;*/                          , [] ,                          EztvSearchPerformerMembers) ;
+var MonovaSearchPerformer        = new Class("MonovaSearchPerformer"                                                                                                             , TorrentRegexSearchPerformer /*&lt;MonovaSearchResult&gt;*/                        , [] ,                          MonovaSearchPerformerMembers) ;
+var TorLockSearchPerformer       = new Class("TorLockSearchPerformer"                                                                                                            , TorrentRegexSearchPerformer /*&lt;TorLockSearchResult&gt;*/                       , [] ,                          TorLockSearchPerformerMembers) ;
+var TorrentsfmSearchPerformer    = new Class("TorrentsfmSearchPerformer"                                                                                                         , TorrentRegexSearchPerformer /*&lt;TorrentsfmSearchResult&gt;*/                    , [] ,                          TorrentsfmSearchPerformerMembers) ;
+var YifySearchPerformer          = new Class("YifySearchPerformer"                                                                                                               , TorrentRegexSearchPerformer /*&lt;YifySearchResult&gt;*/                          , [] ,                          YifySearchPerformerMembers) ;
+var FrostClickSearchPerformer    = new Class("FrostClickSearchPerformer"                                                                                                         , PagedWebSearchPerformer                                                       , [] ,                          FrostClickSearchPerformerMembers) ;
+var PagedRegexSearchPerformer    = new AbstractClass("PagedRegexSearchPerformer &lt;T&nbsp;extends&nbsp;SearchResult&gt;"                                                        , PagedWebSearchPerformer                                                       , [RegexSearchPerformer]/*&lt;T&gt;*/ , PagedRegexSearchPerformerMembers) ;
+var SoundcloudSearchPerformer    = new Class("SoundcloudSearchPerformer"                                                                                                         , PagedWebSearchPerformer                                                       , [] ,                          SoundcloudSearchPerformerMembers) ;
+
+var SearchPerformers = new RootClass("Implementations of SearchPerformer") ;
+SearchPerformers                       .subclasses.push(AbstractSearchPerformer) ;
+  AbstractSearchPerformer              .subclasses.push(WebSearchPerformer) ;
+    WebSearchPerformer                 .subclasses.push(PagedWebSearchPerformer) ;
+      PagedWebSearchPerformer          .subclasses.push(BtdiggSearchPerformer) ;
+      PagedWebSearchPerformer          .subclasses.push(CrawlPagedWebSearchPerformer) ;
+        CrawlPagedWebSearchPerformer   .subclasses.push(ArchiveorgSearchPerformer) ;
+        CrawlPagedWebSearchPerformer   .subclasses.push(YouTubeSearchPerformer) ;
+        CrawlPagedWebSearchPerformer   .subclasses.push(TorrentSearchPerformer) ;
+          TorrentSearchPerformer       .subclasses.push(TorrentJsonSearchPerformer) ;
+            TorrentJsonSearchPerformer .subclasses.push(ExtratorrentSearchPerformer) ;
+            TorrentJsonSearchPerformer .subclasses.push(KATSearchPerformer) ;
+            TorrentJsonSearchPerformer .subclasses.push(MininovaSearchPerformer) ;
+        CrawlPagedWebSearchPerformer   .subclasses.push(CrawlRegexSearchPerformer) ;
+          CrawlRegexSearchPerformer    .subclasses.push(TPBSearchPerformer) ;
+          CrawlRegexSearchPerformer    .subclasses.push(TorrentRegexSearchPerformer) ;
+            TorrentRegexSearchPerformer.subclasses.push(BitSnoopSearchPerformer) ;
+            TorrentRegexSearchPerformer.subclasses.push(EztvSearchPerformer) ;
+            TorrentRegexSearchPerformer.subclasses.push(MonovaSearchPerformer) ;
+            TorrentRegexSearchPerformer.subclasses.push(TorLockSearchPerformer) ;
+            TorrentRegexSearchPerformer.subclasses.push(TorrentsfmSearchPerformer) ;
+            TorrentRegexSearchPerformer.subclasses.push(YifySearchPerformer) ;
+      PagedWebSearchPerformer          .subclasses.push(FrostClickSearchPerformer) ;
+      PagedWebSearchPerformer          .subclasses.push(PagedRegexSearchPerformer) ;
+      PagedWebSearchPerformer          .subclasses.push(SoundcloudSearchPerformer) ;
+
+
+/* search results */
+
+var AbstractSearchResultMembers                    = "public long getCreationTime() | public License getLicense() | public String getThumbnailUrl() | public String toString() | public int getDaysOld()" ;
+var ArchiveorgSearchResultMembers                  = "private final String title | private final License licence | private final String identifier | private final String domainName | private final long creationTime | public String getDisplayName() | public String getDetailsUrl() | public String getSource() | public boolean isComplete() | public License getLicense() | public long getCreationTime() | public String getIdentifier() | private long parsePublicDate(String publicdate) | public String getDomainName()" ;
+var BitSnoopTempSearchResultMembers                = "private final String detailsUrl | private final String itemId | public String getDisplayName() | public String getDetailsUrl() | public String getSource() | public String getItemId() | public boolean isComplete()" ;
+var EztvTempSearchResultMembers                    = "private final String detailsUrl | private final String itemId | public String getDisplayName() | public String getDetailsUrl() | public String getSource() | public String getItemId() | public boolean isComplete()" ;
+var MonovaTempSearchResultMembers                  = "private final String detailsUrl | private final String itemId | public String getDisplayName() | public String getDetailsUrl() | public String getSource() | public String getItemId() | public boolean isComplete()" ;
+var TorLockTempSearchResultMembers                 = "private final String detailsUrl | private final String itemId | public String getDisplayName() | public String getDetailsUrl() | public String getSource() | public String getItemId() | public boolean isComplete()" ;
+var TorrentsfmTempSearchResultMembers              = "private final String detailsUrl | private final String itemId | private final String displayName | public String getDisplayName() | public String getDetailsUrl() | public String getSource() | public String getItemId() | public boolean isComplete()" ;
+var YifyTempSearchResultMembers                    = "private final String detailsUrl | private final String itemId | private final String displayName | public String getDisplayName() | public String getDetailsUrl() | public String getSource() | public String getItemId() | public boolean isComplete()" ;
+var AbstractCrawledSearchResultMembers             = "protected final T parent | public String getDetailsUrl() | public String getSource() | public License getLicense() | public long getCreationTime() | public T getParent()" ;
+var TorrentCrawledSearchResultMembers              = "private final String displayName | private final String filename | private final long size | private final TorrentInfo ti | private final int fileIndex | private final String filePath | public String getDisplayName() | public String getThumbnailUrl() | public String getFilename() | public long getSize() | public String getTorrentUrl() | public int getSeeds() | public String getHash() | public TorrentInfo getTorrentInfo() | public int getFileIndex() | public String getFilePath()" ;
+var ArchiveorgCrawledSearchResultMembers           = "private final String displayName | private final String filename | private final long size | private static final String DOWNLOAD_URL | private final String downloadUrl | public String getDisplayName() | public String getFilename() | public long getSize() | public String getDownloadUrl() | private long calcSize(ArchiveorgFile file)" ;
+var ArchiveorgCrawledStreamableSearchResultMembers = "public String getStreamUrl()" ;
+var ArchiveorgTorrentSearchResultMembers           = "private final long size | public long getSize() | public String getTorrentUrl() | public int getSeeds() | public String getHash()" ;
+var YouTubeCrawledSearchResultMembers              = "private final String displayName | private final String filename | private final long size | private final String downloadUrl | private final LinkInfo video | private final LinkInfo audio | public String getDisplayName() | public String getThumbnailUrl() | public String getFilename() | public long getSize() | public String getDownloadUrl() | public LinkInfo getVideo() | public LinkInfo getAudio() | private String buildFilename(LinkInfo video, LinkInfo audio) | private long buildSize(int durationInSeconds, LinkInfo linfo) | private long buildSize(int durationInSeconds, LinkInfo video, LinkInfo audio) | private String buildDownloadUrl(LinkInfo video, LinkInfo audio) | private String getBestThumbnailUrl(LinkInfo linfo)" ;
+var YouTubeCrawledStreamableSearchResultMembers    = "public String getStreamUrl()" ;
+var AbstractFileSearchResultMembers                = "" ;
+var SoundcloudSearchResultMembers                  = "private static final String DATE_FORMAT | private final String displayName | private final String source | private final String thumbnailUrl | private final String filename | private final long size | private final String downloadUrl | private final String username | private final String trackUrl | private final long date | public String getDisplayName() | public String getSource() | public String getDetailsUrl() | public String getThumbnailUrl() | public long getCreationTime() | public String getFilename() | public long getSize() | public String getDownloadUrl() | public String getStreamUrl() | public String getUsername() | private String buildUsername(SoundcloudItem item) | private long buildSize(SoundcloudItem item) | private String buildSource(SoundcloudItem item) | private String buildThumbnailUrl(String str) | private long buildDate(String str) | private String buildDownloadUrl(SoundcloudItem item, String clientId, String appVersion)" ;
+var AbstractTorrentSearchResultMembers             = "public boolean isComplete()" ;
+var BitSnoopSearchResultMembers                    = "private final static long[] BYTE_MULTIPLIERS | private static final Map<String, Integer> UNIT_TO_BYTE_MULTIPLIERS_MAP | private String displayName | private String detailsUrl | private final long creationTime | private final String filename | private final long size | private final String torrentUrl | private final int seeds | private final String infoHash | public String getDisplayName() | public String getDetailsUrl() | public String getSource() | public long getCreationTime() | public String getTorrentUrl() | public int getSeeds() | public String getHash() | public String getFilename() | public long getSize() | private long parseSize(String group) | private int parseSeeds(String group) | private long parseCreationTime(String dateString) | private String parseFileName(String urlEncodedFileName, String fallbackName)" ;
+var BtdiggSearchResultMembers                      = "private String filename | private String displayName | private String detailsUrl | private String torrentUrl | private String infoHash | private long size | private long creationTime | private int seeds | public long getSize() | public long getCreationTime() | public String getSource() | public String getHash() | public int getSeeds() | public String getDetailsUrl() | public String getDisplayName() | public String getFilename() | public String getTorrentUrl()" ;
+var ExtratorrentSearchResultMembers                = "private String displayName | private String detailsUrl | private final long creationTime | private final String filename | private final long size | private final String torrentUrl | private final int seeds | private final String infoHash | private final ExtratorrentItem item | public String getDisplayName() | public String getDetailsUrl() | public String getSource() | public long getCreationTime() | public String getTorrentUrl() | public int getSeeds() | public String getHash() | public String getFilename() | public long getSize()" ;
+var EztvSearchResultMembers                        = "private final static long[] BYTE_MULTIPLIERS | private static final Map<String, Integer> UNIT_TO_BYTE_MULTIPLIERS_MAP | private String displayName | private String detailsUrl | private final long creationTime | private final String filename | private final long size | private final String torrentUrl | private final int seeds | private final String infoHash | public String getDisplayName() | public String getDetailsUrl() | public String getSource() | public long getCreationTime() | public String getTorrentUrl() | public int getSeeds() | public String getHash() | public String getFilename() | public long getSize() | private long parseSize(String group) | private int parseSeeds(String group) | private long parseCreationTime(String dateString) | private String parseFileName(String urlEncodedFileName)" ;
+var KATSearchResultMembers                         = "private String displayName | private String detailsUrl | private final long creationTime | private final String filename | private final long size | private final String torrentUrl | private final int seeds | private final String infoHash | private final KATItem item | public String getDisplayName() | public String getDetailsUrl() | public String getSource() | public long getCreationTime() | public String getTorrentUrl() | public int getSeeds() | public String getHash() | public String getFilename() | public long getSize() | private String buildFilename(KATItem item) | private String buildUrl() | private long buildCreationTime(KATItem item)" ;
+var MininovaVuzeSearchResultMembers                = "private String displayName | private String detailsUrl | private final long creationTime | private final String filename | private final long size | private final String torrentUrl | private final int seeds | private final String infoHash | private MininovaVuzeItem item | public String getDisplayName() | public String getDetailsUrl() | public String getSource() | public long getCreationTime() | public String getTorrentUrl() | public int getSeeds() | public String getHash() | public String getFilename() | public long getSize()" ;
+var MonovaSearchResultMembers                      = "private final static long[] BYTE_MULTIPLIERS | private static final Map<String, Integer> UNIT_TO_BYTE_MULTIPLIERS_MAP | private String displayName | private String detailsUrl | private final long creationTime | private final String filename | private final long size | private final String torrentUrl | private final int seeds | private final String infoHash | public String getDisplayName() | public String getDetailsUrl() | public String getSource() | public long getCreationTime() | public String getTorrentUrl() | public int getSeeds() | public String getHash() | public String getFilename() | public long getSize() | private long parseSize(String group) | private int parseSeeds(String group) | private long parseCreationTime(String addedWhenString) | private String parseDisplayName(String fileName) | private String parseFileName(String name)" ;
+var TorLockSearchResultMembers                     = "private final static long[] BYTE_MULTIPLIERS | private static final Map<String, Integer> UNIT_TO_BYTE_MULTIPLIERS_MAP | private String displayName | private String detailsUrl | private final long creationTime | private final String filename | private final long size | private final String torrentUrl | private final int seeds | private final String infoHash | public String getDisplayName() | public String getDetailsUrl() | public String getSource() | public long getCreationTime() | public String getTorrentUrl() | public int getSeeds() | public String getHash() | public String getFilename() | public long getSize() | private long parseSize(String group) | private int parseSeeds(String group) | private long parseCreationTime(String dateString) | private String parseFileName(String urlEncodedFileName, String fallbackName)" ;
+var TorrentsfmSearchResultMembers                  = "private final static long[] BYTE_MULTIPLIERS | private static final Map<String, Integer> UNIT_TO_BYTE_MULTIPLIERS_MAP | private String displayName | private String detailsUrl | private final long creationTime | private final String filename | private final long size | private final String torrentUrl | private final int seeds | private final String infoHash | private final String thumbnailUrl | public String getDisplayName() | public String getDetailsUrl() | public String getSource() | public long getCreationTime() | public String getTorrentUrl() | public int getSeeds() | public String getHash() | public String getFilename() | public long getSize() | private long parseSize(String group) | private int parseSeeds(String group) | private long parseCreationTime(String dateString) | private String parseInfoHash(String url) | private String parseThumbnailUrl(String domainName, String srcUrl) | public String getThumbnailUrl()" ;
+var TPBSearchResultMembers                         = "private final static long[] BYTE_MULTIPLIERS | private static final Map<String, Integer> UNIT_TO_BYTE_MULTIPLIERS_MAP | private String displayName | private String detailsUrl | private final long creationTime | private final String filename | private final long size | private final String torrentUrl | private final int seeds | private final String infoHash | private static final Pattern COMMON_DATE_PATTERN | private static final Pattern OLDER_DATE_PATTERN | private static final Pattern DATE_TIME_PATTERN | private final String domainName | public String getDisplayName() | public String getDetailsUrl() | public String getSource() | public long getCreationTime() | public String getTorrentUrl() | public int getSeeds() | public String getHash() | public String getFilename() | public long getSize() | private long parseSize(String group) | private int parseSeeds(String group) | private long parseCreationTime(String group) | private String buildFilename(String filename)" ;
+var YifySearchResultMembers                        = "private final static long[] BYTE_MULTIPLIERS | private static final Map<String, Integer> UNIT_TO_BYTE_MULTIPLIERS_MAP | private String displayName | private String detailsUrl | private final long creationTime | private final String filename | private final long size | private final String torrentUrl | private final int seeds | private final String infoHash | private static final Pattern sizePattern | private final String thumbnailUrl | public String getDisplayName() | public String getDetailsUrl() | public String getSource() | public long getCreationTime() | public String getTorrentUrl() | public int getSeeds() | public String getHash() | public String getFilename() | public long getSize() | private long parseSize(String group) | private String parseInfoHash(String url) | private String parseFileName(String detailsUrl) | public String getThumbnailUrl()" ;
+
+var AbstractSearchResult                    = new AbstractClass("AbstractSearchResult"                                                          , Root                                                             , [SearchResult]                              , AbstractSearchResultMembers) ;
+var ArchiveorgSearchResult                  = new Class("ArchiveorgSearchResult"                                                                , AbstractSearchResult                                             , [CrawlableSearchResult]                     , ArchiveorgSearchResultMembers) ;
+var BitSnoopTempSearchResult                = new Class("BitSnoopTempSearchResult"                                                              , AbstractSearchResult                                             , [CrawlableSearchResult]                     , BitSnoopTempSearchResultMembers) ;
+var EztvTempSearchResult                    = new Class("EztvTempSearchResult"                                                                  , AbstractSearchResult                                             , [CrawlableSearchResult]                     , EztvTempSearchResultMembers) ;
+var MonovaTempSearchResult                  = new Class("MonovaTempSearchResult"                                                                , AbstractSearchResult                                             , [CrawlableSearchResult]                     , MonovaTempSearchResultMembers) ;
+var TorLockTempSearchResult                 = new Class("TorLockTempSearchResult"                                                               , AbstractSearchResult                                             , [CrawlableSearchResult]                     , TorLockTempSearchResultMembers) ;
+var TorrentsfmTempSearchResult              = new Class("TorrentsfmTempSearchResult"                                                            , AbstractSearchResult                                             , [CrawlableSearchResult]                     , TorrentsfmTempSearchResultMembers) ;
+var YifyTempSearchResult                    = new Class("YifyTempSearchResult"                                                                  , AbstractSearchResult                                             , [CrawlableSearchResult]                     , YifyTempSearchResultMembers) ;
+var AbstractCrawledSearchResult             = new AbstractClass("AbstractCrawledSearchResult &lt;T&nbsp;extends&nbsp;CrawlableSearchResult&gt;" , AbstractSearchResult                                             , [CrawledSearchResult]                       , AbstractCrawledSearchResultMembers) ;
+var TorrentCrawledSearchResult              = new Class("TorrentCrawledSearchResult"                                                            , AbstractCrawledSearchResult /*&lt;TorrentCrawlableSearchResult&gt;*/ , [TorrentSearchResult]                   , TorrentCrawledSearchResultMembers) ;
+var ArchiveorgCrawledSearchResult           = new Class("ArchiveorgCrawledSearchResult"                                                         , AbstractCrawledSearchResult                                      , [HttpSearchResult]                          , ArchiveorgCrawledSearchResultMembers) ;
+var ArchiveorgCrawledStreamableSearchResult = new Class("ArchiveorgCrawledStreamableSearchResult"                                               , ArchiveorgCrawledSearchResult                                    , [StreamableSearchResult]                    , ArchiveorgCrawledStreamableSearchResultMembers) ;
+var ArchiveorgTorrentSearchResult           = new Class("ArchiveorgTorrentSearchResult"                                                         , ArchiveorgCrawledSearchResult                                    , [TorrentSearchResult]                       , ArchiveorgTorrentSearchResultMembers) ;
+var YouTubeCrawledSearchResult              = new Class("YouTubeCrawledSearchResult"                                                            , AbstractCrawledSearchResult                                      , [HttpSearchResult]                          , YouTubeCrawledSearchResultMembers) ;
+var YouTubeCrawledStreamableSearchResult    = new Class("YouTubeCrawledStreamableSearchResult"                                                  , YouTubeCrawledSearchResult                                       , [StreamableSearchResult]                    , YouTubeCrawledStreamableSearchResultMembers) ;
+var AbstractFileSearchResult                = new AbstractClass("AbstractFileSearchResult"                                                      , AbstractSearchResult                                             , [FileSearchResult]                          , AbstractFileSearchResultMembers) ;
+var SoundcloudSearchResult                  = new Class("SoundcloudSearchResult"                                                                , AbstractFileSearchResult                                         , [HttpSearchResult , StreamableSearchResult] , SoundcloudSearchResultMembers) ;
+var AbstractTorrentSearchResult             = new AbstractClass("AbstractTorrentSearchResult"                                                   , AbstractFileSearchResult                                         , [TorrentCrawlableSearchResult]              , AbstractTorrentSearchResultMembers) ;
+var BitSnoopSearchResult                    = new Class("BitSnoopSearchResult"                                                                  , AbstractTorrentSearchResult                                      , []                                          , BitSnoopSearchResultMembers) ;
+var BtdiggSearchResult                      = new Class("BtdiggSearchResult"                                                                    , AbstractTorrentSearchResult                                      , []                                          , BtdiggSearchResultMembers) ;
+var ExtratorrentSearchResult                = new Class("ExtratorrentSearchResult"                                                              , AbstractTorrentSearchResult                                      , []                                          , ExtratorrentSearchResultMembers) ;
+var EztvSearchResult                        = new Class("EztvSearchResult"                                                                      , AbstractTorrentSearchResult                                      , []                                          , EztvSearchResultMembers) ;
+var KATSearchResult                         = new Class("KATSearchResult"                                                                       , AbstractTorrentSearchResult                                      , []                                          , KATSearchResultMembers) ;
+var MininovaVuzeSearchResult                = new Class("MininovaVuzeSearchResult"                                                              , AbstractTorrentSearchResult                                      , []                                          , MininovaVuzeSearchResultMembers) ;
+var MonovaSearchResult                      = new Class("MonovaSearchResult"                                                                    , AbstractTorrentSearchResult                                      , []                                          , MonovaSearchResultMembers) ;
+var TorLockSearchResult                     = new Class("TorLockSearchResult"                                                                   , AbstractTorrentSearchResult                                      , []                                          , TorLockSearchResultMembers) ;
+var TorrentsfmSearchResult                  = new Class("TorrentsfmSearchResult"                                                                , AbstractTorrentSearchResult                                      , []                                          , TorrentsfmSearchResultMembers) ;
+var TPBSearchResult                         = new Class("TPBSearchResult"                                                                       , AbstractTorrentSearchResult                                      , []                                          , TPBSearchResultMembers) ;
+var YifySearchResult                        = new Class("YifySearchResult"                                                                      , AbstractTorrentSearchResult                                      , []                                          , YifySearchResultMembers) ;
+
+var SearchResults = new RootClass("Implementations of SearchResult") ;
+SearchResults                      .subclasses.push(AbstractSearchResult) ;
+  AbstractSearchResult             .subclasses.push(ArchiveorgSearchResult) ;
+  AbstractSearchResult             .subclasses.push(TorrentsfmTempSearchResult) ;
+  AbstractSearchResult             .subclasses.push(TorLockTempSearchResult) ;
+  AbstractSearchResult             .subclasses.push(EztvTempSearchResult) ;
+  AbstractSearchResult             .subclasses.push(MonovaTempSearchResult) ;
+  AbstractSearchResult             .subclasses.push(BitSnoopTempSearchResult) ;
+  AbstractSearchResult             .subclasses.push(YifyTempSearchResult) ;
+  AbstractSearchResult             .subclasses.push(AbstractCrawledSearchResult) ;
+    AbstractCrawledSearchResult    .subclasses.push(TorrentCrawledSearchResult) ;
+    AbstractCrawledSearchResult    .subclasses.push(ArchiveorgCrawledSearchResult) ;
+      ArchiveorgCrawledSearchResult.subclasses.push(ArchiveorgCrawledStreamableSearchResult) ;
+      ArchiveorgCrawledSearchResult.subclasses.push(ArchiveorgTorrentSearchResult) ;
+    AbstractCrawledSearchResult    .subclasses.push(YouTubeCrawledSearchResult) ;
+      YouTubeCrawledSearchResult   .subclasses.push(YouTubeCrawledStreamableSearchResult) ;
+  AbstractSearchResult             .subclasses.push(AbstractFileSearchResult) ;
+    AbstractFileSearchResult       .subclasses.push(SoundcloudSearchResult) ;
+    AbstractFileSearchResult       .subclasses.push(AbstractTorrentSearchResult) ;
+      AbstractTorrentSearchResult  .subclasses.push(BitSnoopSearchResult) ;
+      AbstractTorrentSearchResult  .subclasses.push(BtdiggSearchResult) ;
+      AbstractTorrentSearchResult  .subclasses.push(ExtratorrentSearchResult) ;
+      AbstractTorrentSearchResult  .subclasses.push(EztvSearchResult) ;
+      AbstractTorrentSearchResult  .subclasses.push(KATSearchResult) ;
+      AbstractTorrentSearchResult  .subclasses.push(MininovaVuzeSearchResult) ;
+      AbstractTorrentSearchResult  .subclasses.push(MonovaSearchResult) ;
+      AbstractTorrentSearchResult  .subclasses.push(TorLockSearchResult) ;
+      AbstractTorrentSearchResult  .subclasses.push(TorrentsfmSearchResult) ;
+      AbstractTorrentSearchResult  .subclasses.push(TPBSearchResult) ;
+      AbstractTorrentSearchResult  .subclasses.push(YifySearchResult) ;
+
+
+  /* main */
+
+  HierarchyObjects = [SearchInterfaces , SearchPerformers , SearchResults] ;
+  window.onload    = buildDOM ;
+
+} catch(ex) { console.log(ex) ; }
+
+</script>
+
+
+</head><body><div>get javascript, fred</div></body></html>
